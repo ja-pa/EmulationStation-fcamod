@@ -23,9 +23,10 @@ on:
 
       target_branch_2:
         description: 'Second target branch'
-        required: true
+        required: false
         type: choice
         options:
+          - none
           - master
           - 351v
           - 503noTTS
@@ -92,6 +93,10 @@ jobs:
 
       - name: Cherry-pick into second target branch
         run: |
+          if [ "${{ github.event.inputs.target_branch_2 }}" = "none" ]; then
+            echo "No second target defined to cherry-pick into.  We're done."
+            exit 0
+          fi
           git checkout ${{ github.event.inputs.target_branch_2 }}
 
           COMMIT=${{ steps.resolve.outputs.commit_sha }}
