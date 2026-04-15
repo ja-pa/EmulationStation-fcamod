@@ -86,6 +86,7 @@ namespace Renderer
 	unsigned int getWindowFlags    ();
 	void         setupWindow       ();
 	void         createContext     ();
+	bool         hasContext        ();
 	void         destroyContext    ();
 	unsigned int createTexture     (const Texture::Type _type, const bool _linear, const bool _repeat, const unsigned int _width, const unsigned int _height, void* _data);
 	void         destroyTexture    (const unsigned int _texture);

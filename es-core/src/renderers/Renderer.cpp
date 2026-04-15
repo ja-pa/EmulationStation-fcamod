@@ -174,6 +174,14 @@ namespace Renderer
 
 		setupWindow();
 		createContext();
+		if (!hasContext())
+		{
+			LOG(LogError) << "Renderer context creation failed.";
+			go2_display_destroy(display);
+			display = nullptr;
+			SDL_Quit();
+			return false;
+		}
 
 		return true;
 

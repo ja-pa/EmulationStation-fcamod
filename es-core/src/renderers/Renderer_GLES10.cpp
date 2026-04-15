@@ -118,11 +118,25 @@ namespace Renderer
 		int h = go2_display_width_get(display);
 
 		titlebarSurface = go2_surface_create(display, w, 16, DRM_FORMAT_RGB565);
+		if (!titlebarSurface)
+		{
+			LOG(LogWarning) << "go2_surface_create failed for titlebar overlay; continuing without overlay.";
+		}
 
 		context = go2_context_create(display, w, h, &attr);
+		if (!context)
+		{
+			LOG(LogError) << "go2_context_create failed.";
+			return;
+		}
+
 		go2_context_make_current(context);
 
 		presenter = go2_presenter_create(display, DRM_FORMAT_RGB565, 0xff080808);
+		if (!presenter)
+		{
+			LOG(LogWarning) << "go2_presenter_create failed; continuing without presenter overlay.";
+		}
 
 		glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 
@@ -132,21 +146,38 @@ namespace Renderer
 
 	} // createContext
 
+	bool hasContext()
+	{
+		return context != nullptr;
+	}
+
 	void destroyContext()
 	{
 		//SDL_GL_DeleteContext(sdlContext);
 		//sdlContext = nullptr;
-		go2_context_destroy(context);
-		context = nullptr;
+		if (context)
+		{
+			go2_context_destroy(context);
+			context = nullptr;
+		}
 
-		go2_presenter_destroy(presenter);
-		presenter = nullptr;
+		if (presenter)
+		{
+			go2_presenter_destroy(presenter);
+			presenter = nullptr;
+		}
 
-		go2_surface_destroy(titlebarSurface);
-		titlebarSurface = nullptr;
+		if (titlebarSurface)
+		{
+			go2_surface_destroy(titlebarSurface);
+			titlebarSurface = nullptr;
+		}
 
-		go2_input_destroy(input);
-		input = nullptr;
+		if (input)
+		{
+			go2_input_destroy(input);
+			input = nullptr;
+		}
 	} // destroyContext
 
 	unsigned int createTexture(const Texture::Type _type, const bool _linear, const bool _repeat, const unsigned int _width, const unsigned int _height, void* _data)
@@ -322,8 +353,9 @@ namespace Renderer
 			go2_display_t* display = getDisplay();
 			int w = go2_display_height_get(display);
 			int h = go2_display_width_get(display);
+			const bool overlayAvailable = (titlebarSurface != nullptr && presenter != nullptr);
 
-			{
+			if (overlayAvailable) {
 				// Battery level
 				const uint8_t* src = battery_image.pixel_data;
 				int src_stride = 32 * sizeof(short);
@@ -448,7 +480,7 @@ namespace Renderer
 				}
 			}
 
-			{
+			if (overlayAvailable) {
 				// Volume level
 				const uint8_t* src = volume_image.pixel_data;
 				int src_stride = 32 * sizeof(short);
@@ -559,7 +591,7 @@ namespace Renderer
 					dst += dst_stride;
 				}
 			}
-			{
+			if (overlayAvailable) {
 				// Title
 				const uint8_t* src = header.pixel_data;
 				int src_stride = header.width * sizeof(short);
@@ -577,7 +609,7 @@ namespace Renderer
 					dst += dst_stride;
 				}
 			}
-			{
+			if (overlayAvailable) {
 				// Brightness level
 				const uint8_t* src = brightness_image.pixel_data;
 				int src_stride = 32 * sizeof(short);
@@ -704,7 +736,7 @@ namespace Renderer
 				}
 			}
 
-			{
+			if (overlayAvailable) {
 				
 				// WIFI ICONS
 				const uint8_t* src = wifi_image.pixel_data;
@@ -763,7 +795,7 @@ namespace Renderer
 				}
 			}
 
-			{
+			if (overlayAvailable) {
 				
 				// POWER ICON
 				const uint8_t* src = power_image.pixel_data;
@@ -825,16 +857,25 @@ namespace Renderer
 
 			go2_context_swap_buffers(context);
 			go2_surface_t* surface = go2_context_surface_lock(context);
+			if (!surface)
+			{
+				LOG(LogError) << "go2_context_surface_lock failed.";
+				glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+				return;
+			}
 
-			go2_surface_blit(titlebarSurface, 0, 0, w, 16,
-							 surface, 0, 0, w, 16,
-							 GO2_ROTATION_DEGREES_0);
+			if (overlayAvailable)
+			{
+				go2_surface_blit(titlebarSurface, 0, 0, w, 16,
+								 surface, 0, 0, w, 16,
+								 GO2_ROTATION_DEGREES_0);
 
-			go2_presenter_post(presenter,
-						surface,
-						0, 0, w, h,
-						0, 0, h, w,
-						GO2_ROTATION_DEGREES_270);
+				go2_presenter_post(presenter,
+							surface,
+							0, 0, w, h,
+							0, 0, h, w,
+							GO2_ROTATION_DEGREES_270);
+			}
 			go2_context_surface_unlock(context, surface);
 		}
 
