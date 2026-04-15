@@ -4,6 +4,7 @@ option(GLES "Set to ON if targeting Embedded OpenGL" ${GLES})
 option(GL "Set to ON if targeting Desktop OpenGL" ${GL})
 option(RPI "Set to ON to enable the Raspberry PI video player (omxplayer)" ${RPI})
 option(CEC "Set to ON to enable CEC" ${CEC})
+option(PREFER_GLES "Prefer Embedded OpenGL when both Desktop OpenGL and GLES are available" OFF)
 
 project(emulationstation-all)
 
@@ -33,14 +34,8 @@ elseif(EXISTS "${CMAKE_FIND_ROOT_PATH}/opt/vero3/lib/libMali.so")
     set(VERO4K found)
     set(GLSystem "Embedded OpenGL" CACHE STRING "The OpenGL system to be used")
 #-------------------------------------------------------------------------------
-#check if we're running on olinuxino / odroid / etc
-elseif(EXISTS "${CMAKE_FIND_ROOT_PATH}/usr/lib/libMali.so" OR
-    EXISTS "${CMAKE_FIND_ROOT_PATH}/usr/lib/arm-linux-gnueabihf/libMali.so" OR
-    EXISTS "${CMAKE_FIND_ROOT_PATH}/usr/lib/aarch64-linux-gnu/libMali.so" OR
-    EXISTS "${CMAKE_FIND_ROOT_PATH}/usr/local/lib/aarch64-linux-gnu/libmali.so" OR
-    EXISTS "${CMAKE_FIND_ROOT_PATH}/usr/lib/arm-linux-gnueabihf/mali-egl/libmali.so" OR
-    EXISTS "${CMAKE_FIND_ROOT_PATH}/usr/lib/arm-linux-gnueabihf/libmali.so")
-    MESSAGE("libMali.so found")
+#prefer a generic GLES stack only when explicitly requested
+elseif(PREFER_GLES)
     set(GLSystem "Embedded OpenGL" CACHE STRING "The OpenGL system to be used")
 else()
     set(GLSystem "Desktop OpenGL" CACHE STRING "The OpenGL system to be used")
@@ -249,12 +244,10 @@ endif()
 if(DEFINED BCMHOST)
     LIST(APPEND COMMON_LIBRARIES
         bcm_host
-        brcmEGL
         ${OPENGLES_LIBRARIES}
     )
 elseif(DEFINED VERO4K)
     LIST(APPEND COMMON_LIBRARIES
-        EGL
         ${OPENGLES_LIBRARIES}
     )
 else()
@@ -269,7 +262,6 @@ else()
         )
     else()
         LIST(APPEND COMMON_LIBRARIES
-            EGL
             ${OPENGLES_LIBRARIES}
         )
     endif()

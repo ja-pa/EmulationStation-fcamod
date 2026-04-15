@@ -8,12 +8,13 @@
 # free to make use of it in any way you like.
 #-------------------------------------------------------------------
 
-# - Try to find OpenGLES
+# - Try to find OpenGLES 1.x plus EGL
 # Once done this will define
-#  
+#
 #  OPENGLES_FOUND        - system has OpenGLES
 #  OPENGLES_INCLUDE_DIR  - the GL include directory
 #  OPENGLES_LIBRARIES    - Link these to use OpenGLES
+#  OPENGLES_EGL_LIBRARY  - EGL library for GLES platforms
 
 IF (WIN32)
   IF (CYGWIN)
@@ -53,6 +54,11 @@ ELSE (WIN32)
         PATHS /opt/vc/lib
       )
 
+      FIND_LIBRARY(OPENGLES_EGL_LIBRARY
+        NAMES brcmEGL
+        PATHS /opt/vc/lib
+      )
+
     ELSE (DEFINED BCMHOST)
 
       FIND_PATH(OPENGLES_INCLUDE_DIR GLES/gl.h
@@ -62,11 +68,23 @@ ELSE (WIN32)
       )
 
       FIND_LIBRARY(OPENGLES_gl_LIBRARY
-        NAMES GLES_CM GLESv1_CM
+        NAMES GLESv1_CM GLES_CM
         PATHS /opt/graphics/OpenGL/lib
               /usr/openwin/lib
               /usr/shlib /usr/X11R6/lib
               /usr/lib
+              /usr/lib/aarch64-linux-gnu
+              /usr/lib/arm-linux-gnueabihf
+      )
+
+      FIND_LIBRARY(OPENGLES_EGL_LIBRARY
+        NAMES EGL
+        PATHS /opt/graphics/OpenGL/lib
+              /usr/openwin/lib
+              /usr/shlib /usr/X11R6/lib
+              /usr/lib
+              /usr/lib/aarch64-linux-gnu
+              /usr/lib/arm-linux-gnueabihf
       )
     ENDIF (DEFINED BCMHOST)
 
@@ -91,6 +109,10 @@ IF(OPENGLES_gl_LIBRARY)
 
     SET( OPENGLES_LIBRARIES ${OPENGLES_gl_LIBRARY} ${OPENGLES_LIBRARIES})
 
+    IF(OPENGLES_EGL_LIBRARY)
+      LIST(APPEND OPENGLES_LIBRARIES ${OPENGLES_EGL_LIBRARY})
+    ENDIF(OPENGLES_EGL_LIBRARY)
+
     SET( OPENGLES_FOUND "YES" )
 
 ENDIF(OPENGLES_gl_LIBRARY)
@@ -98,4 +120,5 @@ ENDIF(OPENGLES_gl_LIBRARY)
 MARK_AS_ADVANCED(
   OPENGLES_INCLUDE_DIR
   OPENGLES_gl_LIBRARY
+  OPENGLES_EGL_LIBRARY
 )
