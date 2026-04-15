@@ -2,6 +2,7 @@
 #include "utils/StringUtil.h"
 
 #include <algorithm>
+#include <cstdint>
 #include <stdarg.h>
 #include <cstring>
 #include "utils/han.h"
@@ -923,17 +924,17 @@ namespace Utils
         //   struct PinyinMapEntry { uint32_t code; const char* pinyin; };
 
 		// Lowercase ASCII only (do NOT touch non-ASCII bytes, avoid corrupting UTF-8)
-		static inline unsigned char toLowerAsciiChar(unsigned char c) {
+		static unsigned char toLowerAsciiChar(unsigned char c) {
 			return (c & 0x80) ? c : (unsigned char)std::tolower((int)c);
 		}
-		static inline std::string toLowerAscii(const std::string& s) {
+		static std::string toLowerAscii(const std::string& s) {
 			std::string r; r.reserve(s.size());
 			for (unsigned char c : s) r.push_back(toLowerAsciiChar(c));
 			return r;
 		}
 
 		// 可按需增减：把这些当作“可跳过/可折叠”的 ASCII 分隔符
-		static inline bool isAsciiDelimiter(unsigned char c) {
+		static bool isAsciiDelimiter(unsigned char c) {
 			if (c & 0x80) return false;
 			switch (c) {
 				case ' ': case '\t': case '_': case '-': case '.': case ',': case ':':
@@ -947,7 +948,7 @@ namespace Utils
 		}
 
         // 使用 han.h 提供的全局哈希表 s_mapPinyin
-        static inline const char* codepointToPinyin(uint32_t cp)
+        static const char* codepointToPinyin(uint32_t cp)
         {
             auto it = s_mapPinyin.find((int)cp);
             if (it != s_mapPinyin.end())
