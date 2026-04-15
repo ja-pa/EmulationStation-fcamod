@@ -88,19 +88,6 @@ ELSE (WIN32)
       )
     ENDIF (DEFINED BCMHOST)
 
-    # On Unix OpenGL most certainly always requires X11.
-    # Feel free to tighten up these conditions if you don't 
-    # think this is always true.
-
-    IF (OPENGLES_gl_LIBRARY)
-      IF(NOT X11_FOUND)
-        INCLUDE(FindX11)
-      ENDIF(NOT X11_FOUND)
-      IF (X11_FOUND)
-        SET (OPENGLES_LIBRARIES ${X11_LIBRARIES})
-      ENDIF (X11_FOUND)
-    ENDIF (OPENGLES_gl_LIBRARY)
-
   ENDIF(APPLE)
 ENDIF (WIN32)
 
