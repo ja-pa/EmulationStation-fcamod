@@ -73,7 +73,7 @@ namespace Renderer
 		SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
 
 		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 2);
-		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 1);
+		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
 
 		// Antialias : Not supported on every machine
 		// SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 2);
@@ -83,6 +83,12 @@ namespace Renderer
 	void createContext()
 	{
 		sdlContext = SDL_GL_CreateContext(getSDLWindow());
+		if(sdlContext == nullptr)
+		{
+			LOG(LogError) << "Error creating SDL GL context!\n\t" << SDL_GetError();
+			return;
+		}
+
 		SDL_GL_MakeCurrent(getSDLWindow(), sdlContext);
 
 		glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
