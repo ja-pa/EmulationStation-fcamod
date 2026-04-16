@@ -117,12 +117,6 @@ namespace Renderer
 		int w = go2_display_height_get(display);
 		int h = go2_display_width_get(display);
 
-		titlebarSurface = go2_surface_create(display, w, 16, DRM_FORMAT_RGB565);
-		if (!titlebarSurface)
-		{
-			LOG(LogWarning) << "go2_surface_create failed for titlebar overlay; continuing without overlay.";
-		}
-
 		context = go2_context_create(display, w, h, &attr);
 		if (!context)
 		{
@@ -132,10 +126,24 @@ namespace Renderer
 
 		go2_context_make_current(context);
 
-		presenter = go2_presenter_create(display, DRM_FORMAT_RGB565, 0xff080808);
+		const uint32_t scanoutFormat = go2_context_format_get(context);
+		if (scanoutFormat == DRM_FORMAT_RGB565)
+		{
+			titlebarSurface = go2_surface_create(display, w, 16, scanoutFormat);
+			if (!titlebarSurface)
+			{
+				LOG(LogWarning) << "go2_surface_create failed for titlebar overlay; continuing without overlay.";
+			}
+		}
+		else
+		{
+			LOG(LogWarning) << "Skipping RGB565 titlebar overlay on non-RGB565 scanout format.";
+		}
+
+		presenter = go2_presenter_create(display, scanoutFormat, 0xff080808);
 		if (!presenter)
 		{
-			LOG(LogWarning) << "go2_presenter_create failed; continuing without presenter overlay.";
+			LOG(LogWarning) << "go2_presenter_create failed; continuing without presenter.";
 		}
 
 		glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
@@ -353,9 +361,10 @@ namespace Renderer
 			go2_display_t* display = getDisplay();
 			int w = go2_display_height_get(display);
 			int h = go2_display_width_get(display);
-			const bool overlayAvailable = (titlebarSurface != nullptr && presenter != nullptr);
+			const bool titlebarAvailable = (titlebarSurface != nullptr);
+			const bool presenterAvailable = (presenter != nullptr);
 
-			if (overlayAvailable) {
+			if (titlebarAvailable) {
 				// Battery level
 				const uint8_t* src = battery_image.pixel_data;
 				int src_stride = 32 * sizeof(short);
@@ -864,12 +873,15 @@ namespace Renderer
 				return;
 			}
 
-			if (overlayAvailable)
+			if (titlebarAvailable)
 			{
 				go2_surface_blit(titlebarSurface, 0, 0, w, 16,
 								 surface, 0, 0, w, 16,
 								 GO2_ROTATION_DEGREES_0);
+			}
 
+			if (presenterAvailable)
+			{
 				go2_presenter_post(presenter,
 							surface,
 							0, 0, w, h,
