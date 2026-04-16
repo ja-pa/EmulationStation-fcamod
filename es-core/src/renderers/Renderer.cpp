@@ -77,6 +77,9 @@ namespace Renderer
 		LOG(LogInfo) << "Creating window...";
 
 #ifdef USE_SDL_KMSDRM
+		const char* videoDriver = SDL_getenv("SDL_VIDEODRIVER");
+		LOG(LogInfo) << "SDL_VIDEODRIVER=" << (videoDriver ? videoDriver : "<unset>");
+
 		if(SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS) != 0)
 #else
 		if(SDL_Init(SDL_INIT_EVENTS) != 0)
@@ -93,7 +96,16 @@ namespace Renderer
 			SDL_SetHint(SDL_HINT_VIDEO_HIGHDPI_DISABLED, "1");
 
 		SDL_DisplayMode dispMode;
-		SDL_GetDesktopDisplayMode(0, &dispMode);
+		if(SDL_GetDesktopDisplayMode(0, &dispMode) != 0)
+		{
+			LOG(LogError) << "Error getting desktop display mode!\n\t" << SDL_GetError();
+			return false;
+		}
+
+		LOG(LogInfo) << "SDL desktop mode: "
+		             << dispMode.w << "x" << dispMode.h
+		             << " format=" << SDL_GetPixelFormatName(dispMode.format)
+		             << " refresh=" << dispMode.refresh_rate;
 
 #if WIN32
 		if (!Settings::getInstance()->getBool("Windowed") && !Settings::getInstance()->getInt("WindowWidth"))
@@ -151,6 +163,10 @@ namespace Renderer
 			windowFlags |= SDL_WINDOW_ALWAYS_ON_TOP;
 
 		windowFlags |= SDL_WINDOW_ALLOW_HIGHDPI;
+		LOG(LogInfo) << "SDL window request: "
+		             << windowWidth << "x" << windowHeight
+		             << " screen=" << screenWidth << "x" << screenHeight
+		             << " flags=0x" << std::hex << windowFlags << std::dec;
 	
 		if((sdlWindow = SDL_CreateWindow("EmulationStation", 
 			sdlWindowPosition.x(),
@@ -165,6 +181,15 @@ namespace Renderer
 		LOG(LogInfo) << "Created window successfully.";
 
 		createContext();
+		if (!hasContext())
+		{
+			LOG(LogError) << "Renderer context creation failed.";
+			SDL_DestroyWindow(sdlWindow);
+			sdlWindow = nullptr;
+			SDL_ShowCursor(initialCursorState);
+			SDL_Quit();
+			return false;
+		}
 		setIcon();
 		setSwapInterval();
 #else

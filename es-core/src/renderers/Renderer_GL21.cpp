@@ -74,9 +74,18 @@ namespace Renderer
 
 		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 2);
 		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
+		SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_COMPATIBILITY);
 
 		// Antialias : Not supported on every machine
 		// SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 2);
+
+		LOG(LogInfo) << "SDL GL attributes requested:"
+		             << " rgba=8/8/8"
+		             << " depth=24"
+		             << " stencil=1"
+		             << " doublebuffer=1"
+		             << " version=2.1"
+		             << " profile=compatibility";
 
 	} // setupWindow
 
@@ -89,15 +98,43 @@ namespace Renderer
 			return;
 		}
 
-		SDL_GL_MakeCurrent(getSDLWindow(), sdlContext);
+		if(SDL_GL_MakeCurrent(getSDLWindow(), sdlContext) != 0)
+		{
+			LOG(LogError) << "Error making SDL GL context current!\n\t" << SDL_GetError();
+			SDL_GL_DeleteContext(sdlContext);
+			sdlContext = nullptr;
+			return;
+		}
 
 		glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 
-		std::string glExts = (const char*)glGetString(GL_EXTENSIONS);
+		const GLubyte* glVersion = glGetString(GL_VERSION);
+		const GLubyte* glRenderer = glGetString(GL_RENDERER);
+		const GLubyte* glVendor = glGetString(GL_VENDOR);
+		const GLubyte* glExtString = glGetString(GL_EXTENSIONS);
+		if(glVersion == nullptr || glExtString == nullptr)
+		{
+			LOG(LogError) << "OpenGL context created but glGetString returned null.";
+			SDL_GL_DeleteContext(sdlContext);
+			sdlContext = nullptr;
+			return;
+		}
+
+		LOG(LogInfo) << "OpenGL version: " << (const char*)glVersion;
+		LOG(LogInfo) << "OpenGL renderer: " << (glRenderer ? (const char*)glRenderer : "<unknown>");
+		LOG(LogInfo) << "OpenGL vendor: " << (glVendor ? (const char*)glVendor : "<unknown>");
+
+		std::string glExts = (const char*)glExtString;
 		LOG(LogInfo) << "Checking available OpenGL extensions...";
 		LOG(LogInfo) << " ARB_texture_non_power_of_two: " << (glExts.find("ARB_texture_non_power_of_two") != std::string::npos ? "ok" : "MISSING");
 
 	} // createContext
+
+	bool hasContext()
+	{
+		return sdlContext != nullptr;
+
+	} // hasContext
 
 	void destroyContext()
 	{
