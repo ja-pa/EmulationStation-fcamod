@@ -126,21 +126,8 @@ namespace Renderer
 
 		go2_context_make_current(context);
 
-		const uint32_t scanoutFormat = go2_context_format_get(context);
-		if (scanoutFormat == DRM_FORMAT_RGB565)
-		{
-			titlebarSurface = go2_surface_create(display, w, 16, scanoutFormat);
-			if (!titlebarSurface)
-			{
-				LOG(LogWarning) << "go2_surface_create failed for titlebar overlay; continuing without overlay.";
-			}
-		}
-		else
-		{
-			LOG(LogWarning) << "Skipping RGB565 titlebar overlay on non-RGB565 scanout format.";
-		}
-
-		presenter = go2_presenter_create(display, scanoutFormat, 0xff080808);
+		LOG(LogWarning) << "Skipping RGB565 titlebar overlay; using XRGB8888 presenter.";
+		presenter = go2_presenter_create(display, DRM_FORMAT_XRGB8888, 0xff080808);
 		if (!presenter)
 		{
 			LOG(LogWarning) << "go2_presenter_create failed; continuing without presenter.";
@@ -489,7 +476,7 @@ namespace Renderer
 				}
 			}
 
-			if (overlayAvailable) {
+			if (titlebarAvailable) {
 				// Volume level
 				const uint8_t* src = volume_image.pixel_data;
 				int src_stride = 32 * sizeof(short);
@@ -600,7 +587,7 @@ namespace Renderer
 					dst += dst_stride;
 				}
 			}
-			if (overlayAvailable) {
+			if (titlebarAvailable) {
 				// Title
 				const uint8_t* src = header.pixel_data;
 				int src_stride = header.width * sizeof(short);
@@ -618,7 +605,7 @@ namespace Renderer
 					dst += dst_stride;
 				}
 			}
-			if (overlayAvailable) {
+			if (titlebarAvailable) {
 				// Brightness level
 				const uint8_t* src = brightness_image.pixel_data;
 				int src_stride = 32 * sizeof(short);
@@ -745,7 +732,7 @@ namespace Renderer
 				}
 			}
 
-			if (overlayAvailable) {
+			if (titlebarAvailable) {
 				
 				// WIFI ICONS
 				const uint8_t* src = wifi_image.pixel_data;
@@ -804,7 +791,7 @@ namespace Renderer
 				}
 			}
 
-			if (overlayAvailable) {
+			if (titlebarAvailable) {
 				
 				// POWER ICON
 				const uint8_t* src = power_image.pixel_data;
