@@ -5,6 +5,7 @@ option(GL "Set to ON if targeting Desktop OpenGL" ${GL})
 option(RPI "Set to ON to enable the Raspberry PI video player (omxplayer)" ${RPI})
 option(CEC "Set to ON to enable CEC" ${CEC})
 option(PREFER_GLES "Prefer Embedded OpenGL when both Desktop OpenGL and GLES are available" OFF)
+option(SDL_KMSDRM "Use SDL2 window/context path instead of libgo2" OFF)
 
 project(emulationstation-all)
 
@@ -121,6 +122,10 @@ else()
     add_definitions(-DUSE_OPENGLES_10)
 endif()
 
+if(SDL_KMSDRM)
+    add_definitions(-DUSE_SDL_KMSDRM)
+endif()
+
 #-------------------------------------------------------------------------------
 #add include directories
 set(COMMON_INCLUDE_DIRS
@@ -212,8 +217,11 @@ set(COMMON_LIBRARIES
     ${VLC_LIBRARIES}
     pugixml
     nanosvg
-    go2
 )
+
+if(NOT SDL_KMSDRM)
+    LIST(APPEND COMMON_LIBRARIES go2)
+endif()
 
 # if(MSVC)
 #         LIST(APPEND COMMON_LIBRARIES

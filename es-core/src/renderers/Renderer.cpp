@@ -11,7 +11,9 @@
 #include <SDL.h>
 #include <stack>
 
+#ifndef USE_SDL_KMSDRM
 #include <go2/display.h>
+#endif
 
 #if WIN32
 #include <Windows.h>
@@ -22,7 +24,7 @@ namespace Renderer
 	static std::stack<Rect> clipStack;
 	static std::stack<Rect> nativeClipStack;
 
-	//static SDL_Window*      sdlWindow          = nullptr;
+	static SDL_Window*      sdlWindow          = nullptr;
 	static int              windowWidth        = 0;
 	static int              windowHeight       = 0;
 	static int              screenWidth        = 0;
@@ -74,13 +76,17 @@ namespace Renderer
 	{
 		LOG(LogInfo) << "Creating window...";
 
+#ifdef USE_SDL_KMSDRM
+		if(SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS) != 0)
+#else
 		if(SDL_Init(SDL_INIT_EVENTS) != 0)
+#endif
 		{
 			LOG(LogError) << "Error initializing SDL!\n	" << SDL_GetError();
 			return false;
 		}
 
-#if 0
+#ifdef USE_SDL_KMSDRM
 		initialCursorState = (SDL_ShowCursor(0) != 0);
 
 		if (!Settings::getInstance()->getBool("Windowed"))
@@ -161,8 +167,7 @@ namespace Renderer
 		createContext();
 		setIcon();
 		setSwapInterval();
-#endif
-
+#else
 		display = go2_display_create();
 		windowWidth = go2_display_height_get(display);
 		windowHeight = go2_display_width_get(display);
@@ -182,6 +187,7 @@ namespace Renderer
 			SDL_Quit();
 			return false;
 		}
+#endif
 
 		return true;
 
@@ -197,14 +203,15 @@ namespace Renderer
 		}
 
 		destroyContext();
-#if 0
+#ifdef USE_SDL_KMSDRM
 		SDL_DestroyWindow(sdlWindow);
 		sdlWindow = nullptr;
 
 		SDL_ShowCursor(initialCursorState);
-#endif
+#else
 		go2_display_destroy(display);
 		display = nullptr;
+#endif
 
 		SDL_Quit();
 
@@ -410,7 +417,7 @@ namespace Renderer
 
 	} // drawRect
 
-	//SDL_Window* getSDLWindow()     { return sdlWindow; }
+	SDL_Window* getSDLWindow()     { return sdlWindow; }
 	int         getWindowWidth()   { return windowWidth; }
 	int         getWindowHeight()  { return windowHeight; }
 	int         getScreenWidth()   { return screenWidth; }

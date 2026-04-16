@@ -31,7 +31,9 @@
 #include "ApiSystem.h"
 #include "views/gamelist/IGameListView.h"
 
+#ifndef USE_SDL_KMSDRM
 #include <go2/display.h>
+#endif
 #include "SystemConf.h"
 
 GuiMenu::GuiMenu(Window* window, bool animate) : GuiComponent(window), mMenu(window, _("MAIN MENU")), mVersion(window)
@@ -99,9 +101,14 @@ void GuiMenu::openDisplaySettings()
 	auto s = new GuiSettings(mWindow, _("DISPLAY"));
 
 	auto bright = std::make_shared<SliderComponent>(mWindow, 1.0f, 100.f, 1.0f, "%");
+#ifdef USE_SDL_KMSDRM
+	bright->setValue(100.0f);
+	s->addWithLabel("BRIGHTNESS", bright);
+#else
 	bright->setValue((float)go2_display_backlight_get(NULL)+1.0);
 	s->addWithLabel("BRIGHTNESS", bright);
 	s->addSaveFunc([bright] { go2_display_backlight_set(NULL, (int)Math::round(bright->getValue())); });
+#endif
 
 	mWindow->pushGui(s);
 }
